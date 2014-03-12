@@ -20,31 +20,30 @@ class podfetch:
 	
 	def __init__(self):
 		''' Setup the list of podcast feeds. '''
-		self.podlist = [['TOTD','http://downloads.bbc.co.uk/podcasts/radio4/totd/rss.xml',0],
+		self.podlist = [['TOTD ','http://downloads.bbc.co.uk/podcasts/radio4/totd/rss.xml',0],
 					['MoreOrLess','http://downloads.bbc.co.uk/podcasts/radio4/moreorless/rss.xml',0],
-					['TWIT','http://feeds.twit.tv/twit',0],
-					['TWIG','http://leo.am/podcasts/twig',0],
+					['TWIT ','http://feeds.twit.tv/twit',0],
+					['TWIG ','http://leo.am/podcasts/twig',0],
 					['TWICH','http://leo.am/podcasts/twich',0],
-					['WindowsWeekly','http://leoville.tv/podcasts/ww.xml',0],
+					['WindowsWkly','http://leoville.tv/podcasts/ww.xml',0],
 					['Click','http://downloads.bbc.co.uk/podcasts/worldservice/digitalp/rss.xml',0],
-					['SaturdayEdition','http://downloads.bbc.co.uk/podcasts/5live/jot/rss.xml',0],
+					['SatdayEdtion','http://downloads.bbc.co.uk/podcasts/5live/jot/rss.xml',0],
 					['TechTent','http://downloads.bbc.co.uk/podcasts/worldservice/tech/rss.xml',0],
-					['IOT','http://downloads.bbc.co.uk/podcasts/radio4/iot/rss.xml',0],
+					['IOT  ','http://downloads.bbc.co.uk/podcasts/radio4/iot/rss.xml',0],
 					['TechStuff','http://www.howstuffworks.com/podcasts/techstuff.rss',0],
 					['AmpHour','http://www.theamphour.com/feed/podcast',1],
 					['Sprocket','http://www.thepodcasthost.com/thesprocketpodcast/feed/podcast/',1],
-					['AstronomyCast','http://feeds.feedburner.com/astronomycast',1],
+					['AstronomyCst','http://feeds.feedburner.com/astronomycast',1],
 					['Which','http://feeds.feedburner.com/whichtechnology',1],
-					['99PercentInvisible','http://feeds.99percentinvisible.org/99percentinvisible',1],
-					['EmbeddedSystems','http://embedded.fm/episodes?format=rss',1],
+					['99%Invisible','http://feeds.99percentinvisible.org/99percentinvisible',1],
+					['EmbeddedSys','http://embedded.fm/episodes?format=rss',1],
 					['MarathonTalk','http://marathontalk.libsyn.com/rss',1],
 					['PCPro','http://podcast.pcpro.co.uk/?feed=rss2',1],
-					['CNet','http://www.cnet.co.uk/feeds/podcasts/',1],
+					['CNet  ','http://www.cnet.co.uk/feeds/podcasts/',1],
 					['IMtalk','http://ironmantalk.libsyn.com/rss',1],
 					['Wired','http://www.wired.co.uk/podcast/rss',2]
 					]
-		self.testlist = [['TWIT','http://feeds.twit.tv/twit',0],
-					['TWIG','http://leo.am/podcasts/twig',0]
+		self.testlist = [['TechStuff','http://www.howstuffworks.com/podcasts/techstuff.rss',0]
 					]
 		self.broken = [['ScienceTalk','http://www.scientificamerican.com/podcast/sciam_podcast_i.xml'],
 					['Python', 'http://www.frompythonimportpodcast.com/episodes/', 1],
@@ -80,6 +79,17 @@ class podfetch:
 		d = feedparser.parse(url)
 		logging.info("Feed version:"+d.version)
 		self.checkHtmlStatus(d.status)		
+	
+	def howOld(self,episode_date):
+		'''Measure how old the feed is. Need to work in datetime, since need to subtract times.'''
+		# Not working yet!!!
+		localtime_s = time.mktime(time.localtime(time.time()))
+		last_time_s = time.mktime(episode_date)
+		age_s = (localtime_s - last_time_s)
+		age_days = age_s/60/60/24
+		print 'Age: '+str(int(age_days))+' days.',
+		logging.info('Age: '+str(int(age_days))+' days.')
+		return(0)
 		
 	def checkHtmlStatus(self,feed):
 		try:
@@ -97,17 +107,31 @@ class podfetch:
 		try:
 			logging.info("Feed version = :"+feed.version)
 			title=feed.channel.title
-			date = feed.updated_parsed
-#			print title+'. Last updated: '+str(date[0])+'/'+str(date[1])+'/'+str(date[2]) 
-			logging.info(title+' Last updated: '+str(date[0])+'/'+str(date[1])+'/'+str(date[2])) 
-			if title in self.lastUpdated:
-				if date == self.lastUpdated[title]:
-					print 'No updates.'
-					logging.info('No updates.')
-					return(1)
-			self.lastUpdated[title] = date
+#			episode_date = feed.updated_parsed
+			first_entry = feed.entries[0]
+			episode_date = first_entry.updated_parsed
+#			if title in ('TechStuff', 'Astronomy Cast', 'The latest technology and gadgets - presented by Which?'):
+#				print "special handling for techstuff"
+#				first_entry = feed.entries[0]
+#				episode_date = first_entry.published_parsed
+#				episode_date = first_entry.updated_parsed
+#			print title+'. Last updated: '+str(episode_date[0])+'/'+str(episode_date[1])+'/'+str(episode_date[2]) 
+			logging.info(title+' Last update: '+str(episode_date[0])+'/'+str(episode_date[1])+'/'+str(episode_date[2])) 
+			try:
+				if title in self.lastUpdated:
+					if episode_date == self.lastUpdated[title]:
+						self.howOld(episode_date)
+						print 'No updates.'
+						logging.info('No updates.')
+						return(1)
+				self.howOld(episode_date)
+				self.lastUpdated[title] = episode_date
+			except:
+				print "Bad feed date."
+				logging.warning('Bad feed date.')
+				return(1)
 		except:
-			print "Bad feed details."
+			print 'Bad feed details.'
 			logging.warning('Bad feed details.')
 			return(1)
 		return(0)
