@@ -1,5 +1,5 @@
 #!/usr/bin/python
-""" Pulls podcasts from the web and puts them in the destin dir."""
+""" Pulls podcasts from the web and puts them in the destination dir."""
 import feedparser
 import time
 import subprocess
@@ -11,9 +11,9 @@ import shutil
 import argparse
 import pickle
 
-LOGFILE='log/podfetch.log'
-DESTINATIONDIR = "/mnt/NAS/Buffalo/AApods"
-LASTUPDATEDFILE = 'lastupdated.pkl'
+LOGFILE='./log/podfetch.log'
+DESTINATIONDIR = '/mnt/NAS/Buffalo/AApods'
+LASTUPDATEDFILE = './lastupdated.pkl'
 
 class podfetch:
 	''' A class to fetch podcasts from the web and leave them ready for playing by mpd. '''
@@ -49,7 +49,6 @@ class podfetch:
 					['Python', 'http://www.frompythonimportpodcast.com/episodes/', 1],
 					['Geekwire','http://kiroradio.com/rss/podcast.php?s=1000',1]
 					]
-		self.cachedir = "pods"
 		self.htmlStatusCodes = {200: 'OK',
 								301: 'Feed permanently moved.',
 								302: 'Feed temporarily moved.',
@@ -59,18 +58,6 @@ class podfetch:
 								}
 		self.downloadCount = 0
 
-	def _copymp3(self):
-		'''Move the file to the final destination.'''
-		filelist = os.listdir(self.cachedir)
-		for thisfile in filelist:
-			sourcecopystring = self.cachedir+'/'+thisfile
-			destinationcopystring = DESTINATIONDIR+'/'+thisfile
-			print "Copying: ",sourcecopystring
-			logging.info("Copying: "+sourcecopystring+' to '+destinationcopystring)
-			shutil.copyfile(sourcecopystring, destinationcopystring)
-			os.remove(sourcecopystring)
-		return(0)
-		
 	def feedType(self,urltuple):
 		''' Open the feed list and find type. '''
 		label,url = urltuple
@@ -82,7 +69,6 @@ class podfetch:
 	
 	def howOld(self,episode_date):
 		'''Measure how old the feed is. Need to work in datetime, since need to subtract times.'''
-		# Not working yet!!!
 		localtime_s = time.mktime(time.localtime(time.time()))
 		last_time_s = time.mktime(episode_date)
 		age_s = (localtime_s - last_time_s)
@@ -107,15 +93,8 @@ class podfetch:
 		try:
 			logging.info("Feed version = :"+feed.version)
 			title=feed.channel.title
-#			episode_date = feed.updated_parsed
 			first_entry = feed.entries[0]
 			episode_date = first_entry.updated_parsed
-#			if title in ('TechStuff', 'Astronomy Cast', 'The latest technology and gadgets - presented by Which?'):
-#				print "special handling for techstuff"
-#				first_entry = feed.entries[0]
-#				episode_date = first_entry.published_parsed
-#				episode_date = first_entry.updated_parsed
-#			print title+'. Last updated: '+str(episode_date[0])+'/'+str(episode_date[1])+'/'+str(episode_date[2]) 
 			logging.info(title+' Last update: '+str(episode_date[0])+'/'+str(episode_date[1])+'/'+str(episode_date[2])) 
 			try:
 				if title in self.lastUpdated:
@@ -158,7 +137,6 @@ class podfetch:
 			self.lastUpdated = {}
 			return(1)
 		self.lastUpdated = pickle.load(f)
-#		print self.lastUpdated
 		return(0)
 		
 	def handleRedirect(self,link):
@@ -196,7 +174,6 @@ class podfetch:
 						k=i['links']
 						l=k[0]		
 						the_mp3=self.handleRedirect(l['href'])
-#					print 'mp3 link:', the_mp3
 					logging.info('mp3 link:'+the_mp3)
 					p = subprocess.call(["wget", "-q", "-nc", "-P", DESTINATIONDIR, the_mp3])
 		except:
@@ -217,11 +194,10 @@ class podfetch:
 			for k in self.testlist:
 				if self.getPod(k) == 0:
 					self.saveLastUpdated()
-#		self.saveLastUpdated()
 		print "Number of downloads: "+str(self.downloadCount)
 		logging.info("Number of downloads: "+str(self.downloadCount))
-#		print "Starting db initialise..."
-#		p = subprocess.check_output(["mpc", "update"])	# reinitialise the db
+		print "Starting db initialise..."
+		p = subprocess.check_output(["mpc", "update"])	# reinitialise the db
 
 if __name__ == "__main__":
 	''' Typically run this as a standalone prog to collect the podcasts asynchronously from the playing. '''
@@ -244,9 +220,9 @@ if __name__ == "__main__":
 #	Default level is warning, level=logging.INFO log lots, level=logging.DEBUG log everything
 	logging.warning(datetime.datetime.now().strftime('%d %b %H:%M')+". Running podfetch class as a standalone app")
 	myPodfetch = podfetch()
-	print ">>> podfetch <<<"
-	print "Destination directory: ",DESTINATIONDIR
-	print "Stored latest dates in: ",LASTUPDATEDFILE
+	print '>>> podfetch <<<'
+	print 'Destination directory: ',DESTINATIONDIR
+	print 'Stored latest dates in: ',LASTUPDATEDFILE
 	myPodfetch.processRssList(verbose)
 
 
